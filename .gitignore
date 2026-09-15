@@ -39,3 +39,9 @@ kiodrive_version.h
 moc_*.cpp
 ui_*.h
 qrc_*.cpp
+
+# Spike local build artifacts (cl.exe in-tree)
+spikes/**/*.exe
+spikes/**/*.obj
+spikes/**/*.pdb
+spikes/**/*.ilk
