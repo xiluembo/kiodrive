@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2026 KIODrive authors
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# This file is part of KIODrive.
+# See LICENSE / LICENSES/LGPL-3.0-or-later.txt.
+
+ecm_add_tests(
+    test_file_identity.cpp
+    test_path_router.cpp
+    test_mount_conflicts.cpp
+    test_name_mapper.cpp
+    test_mock_kio.cpp
+    test_metadata_store.cpp
+    LINK_LIBRARIES
+        kiodrive_common
+        kiodrive_metadata
+        kiodrive_mounts
+        kiodrive_kio
+        Qt6::Test
+)

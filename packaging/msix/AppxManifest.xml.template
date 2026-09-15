@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2026 KIODrive authors
+SPDX-License-Identifier: LGPL-3.0-or-later
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:desktop3="http://schemas.microsoft.com/appx/manifest/desktop/windows10/3"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  IgnorableNamespaces="uap desktop desktop3 com">
+  <Identity Name="KIODrive.Provider" Publisher="CN=KIODrive" Version="0.1.0.0" />
+  <Properties>
+    <DisplayName>KIODrive</DisplayName>
+    <PublisherDisplayName>KIODrive</PublisherDisplayName>
+    <Description>KIO Cloud Files provider for Windows</Description>
+  </Properties>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26200.0" />
+  </Dependencies>
+  <Applications>
+    <Application Id="KIODrive" Executable="KIODrive.Gui.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="KIODrive" Description="KIODrive" Square150x150Logo="Assets\StoreLogo.png" Square44x44Logo="Assets\StoreLogo.png" BackgroundColor="transparent" />
+      <Extensions>
+        <desktop:Extension Category="windows.startupTask" Executable="KIODrive.SyncEngine.exe" EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask TaskId="KIODriveSyncEngine" Enabled="true" DisplayName="KIODrive Sync Engine" />
+        </desktop:Extension>
+        <desktop3:Extension Category="windows.cloudFiles">
+          <desktop3:CloudFiles>
+            <!-- Handlers registered as COM ExeServer in later milestones -->
+          </desktop3:CloudFiles>
+        </desktop3:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+</Package>

@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 KIODrive authors
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# This file is part of KIODrive.
+# See LICENSE / LICENSES/LGPL-3.0-or-later.txt.
+
+version = "1.0"
+
+[[annotations]]
+path = [
+    "docs/**",
+    "README.md",
+    "REUSE.toml",
+]
+SPDX-FileCopyrightText = "2026 KIODrive authors"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = [
+    "src/**",
+    "tests/**",
+    "spikes/**",
+    "cmake/**",
+    "CMakeLists.txt",
+    "packaging/**",
+    "scripts/**",
+]
+SPDX-FileCopyrightText = "2026 KIODrive authors"
+SPDX-License-Identifier = "LGPL-3.0-or-later"
