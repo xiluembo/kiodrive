@@ -18,3 +18,10 @@ ecm_add_tests(
         kiodrive_kio
         Qt6::Test
 )
+
+ecm_add_test(
+    test_pending_fetch_registry.cpp
+    LINK_LIBRARIES
+        kiodrive_cloudfiles
+        Qt6::Test
+)

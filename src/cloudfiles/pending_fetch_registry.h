@@ -36,6 +36,7 @@ struct PendingFetch {
     QUuid operationId;
     PendingFetchKind kind = PendingFetchKind::Data;
     QString relativePath;
+    quint64 requestKey = 0;
     bool cancelled = false;
 #ifdef Q_OS_WIN
     CF_CONNECTION_KEY connectionKey{};
@@ -50,7 +51,7 @@ struct PendingFetch {
 class PendingFetchRegistry
 {
 public:
-    QUuid begin(PendingFetchKind kind, const QString &relativePath
+    QUuid begin(PendingFetchKind kind, const QString &relativePath, quint64 requestKey
 #ifdef Q_OS_WIN
                 ,
                 CF_CONNECTION_KEY connectionKey,
@@ -58,13 +59,13 @@ public:
 #endif
     );
 
-    bool markCancelled(PendingFetchKind kind, const QString &relativePath);
-    bool isCancelled(PendingFetchKind kind, const QString &relativePath) const;
-    bool takeIfActive(PendingFetchKind kind, const QString &relativePath, PendingFetch *out);
-    void clear(PendingFetchKind kind, const QString &relativePath);
+    bool markCancelled(PendingFetchKind kind, quint64 requestKey);
+    bool isCancelled(PendingFetchKind kind, quint64 requestKey) const;
+    bool takeIfActive(PendingFetchKind kind, quint64 requestKey, PendingFetch *out);
+    void clear(PendingFetchKind kind, quint64 requestKey);
 
 private:
-    static QString keyFor(PendingFetchKind kind, const QString &relativePath);
+    static QString keyFor(PendingFetchKind kind, quint64 requestKey);
 
     mutable QMutex m_mutex;
     QHash<QString, PendingFetch> m_pending;

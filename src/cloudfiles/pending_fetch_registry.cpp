@@ -15,13 +15,14 @@
 namespace KIODrive
 {
 
-QString PendingFetchRegistry::keyFor(PendingFetchKind kind, const QString &relativePath)
+QString PendingFetchRegistry::keyFor(PendingFetchKind kind, quint64 requestKey)
 {
     const QLatin1Char sep('|');
-    return (kind == PendingFetchKind::Data ? QStringLiteral("data") : QStringLiteral("ph")) + sep + relativePath;
+    return (kind == PendingFetchKind::Data ? QStringLiteral("data") : QStringLiteral("ph")) + sep
+        + QString::number(requestKey);
 }
 
-QUuid PendingFetchRegistry::begin(PendingFetchKind kind, const QString &relativePath
+QUuid PendingFetchRegistry::begin(PendingFetchKind kind, const QString &relativePath, quint64 requestKey
 #ifdef Q_OS_WIN
                                   ,
                                   CF_CONNECTION_KEY connectionKey,
@@ -34,19 +35,20 @@ QUuid PendingFetchRegistry::begin(PendingFetchKind kind, const QString &relative
     fetch.operationId = QUuid::createUuid();
     fetch.kind = kind;
     fetch.relativePath = relativePath;
+    fetch.requestKey = requestKey;
     fetch.cancelled = false;
 #ifdef Q_OS_WIN
     fetch.connectionKey = connectionKey;
     fetch.transferKey = transferKey;
 #endif
-    m_pending.insert(keyFor(kind, relativePath), fetch);
+    m_pending.insert(keyFor(kind, requestKey), fetch);
     return fetch.operationId;
 }
 
-bool PendingFetchRegistry::markCancelled(PendingFetchKind kind, const QString &relativePath)
+bool PendingFetchRegistry::markCancelled(PendingFetchKind kind, quint64 requestKey)
 {
     QMutexLocker lock(&m_mutex);
-    const auto it = m_pending.find(keyFor(kind, relativePath));
+    const auto it = m_pending.find(keyFor(kind, requestKey));
     if (it == m_pending.end()) {
         return false;
     }
@@ -54,17 +56,17 @@ bool PendingFetchRegistry::markCancelled(PendingFetchKind kind, const QString &r
     return true;
 }
 
-bool PendingFetchRegistry::isCancelled(PendingFetchKind kind, const QString &relativePath) const
+bool PendingFetchRegistry::isCancelled(PendingFetchKind kind, quint64 requestKey) const
 {
     QMutexLocker lock(&m_mutex);
-    const auto it = m_pending.constFind(keyFor(kind, relativePath));
+    const auto it = m_pending.constFind(keyFor(kind, requestKey));
     return it != m_pending.constEnd() && it->cancelled;
 }
 
-bool PendingFetchRegistry::takeIfActive(PendingFetchKind kind, const QString &relativePath, PendingFetch *out)
+bool PendingFetchRegistry::takeIfActive(PendingFetchKind kind, quint64 requestKey, PendingFetch *out)
 {
     QMutexLocker lock(&m_mutex);
-    const QString key = keyFor(kind, relativePath);
+    const QString key = keyFor(kind, requestKey);
     const auto it = m_pending.find(key);
     if (it == m_pending.end()) {
         return false;
@@ -77,10 +79,10 @@ bool PendingFetchRegistry::takeIfActive(PendingFetchKind kind, const QString &re
     return active;
 }
 
-void PendingFetchRegistry::clear(PendingFetchKind kind, const QString &relativePath)
+void PendingFetchRegistry::clear(PendingFetchKind kind, quint64 requestKey)
 {
     QMutexLocker lock(&m_mutex);
-    m_pending.remove(keyFor(kind, relativePath));
+    m_pending.remove(keyFor(kind, requestKey));
 }
 
 } // namespace KIODrive

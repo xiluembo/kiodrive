@@ -94,7 +94,6 @@ private:
     static void CALLBACK onFetchData(CONST CF_CALLBACK_INFO *info, CONST CF_CALLBACK_PARAMETERS *params);
     static void CALLBACK onCancelFetchData(CONST CF_CALLBACK_INFO *info, CONST CF_CALLBACK_PARAMETERS *params);
     static void CALLBACK onCancelFetchPlaceholders(CONST CF_CALLBACK_INFO *info, CONST CF_CALLBACK_PARAMETERS *params);
-    static void CALLBACK onValidateData(CONST CF_CALLBACK_INFO *info, CONST CF_CALLBACK_PARAMETERS *params);
     static void CALLBACK onNotifyFileOpenCompletion(CONST CF_CALLBACK_INFO *info, CONST CF_CALLBACK_PARAMETERS *params);
     static void CALLBACK onNotifyFileCloseCompletion(CONST CF_CALLBACK_INFO *info, CONST CF_CALLBACK_PARAMETERS *params);
     static void CALLBACK onNotifyDehydrate(CONST CF_CALLBACK_INFO *info, CONST CF_CALLBACK_PARAMETERS *params);
@@ -111,19 +110,17 @@ private:
      * root itself, which yields an empty relative path).
      */
     QString toSyncRelativePath(const QString &rawPath, bool *inScope = nullptr) const;
-    void processFetchPlaceholders(const QString &relativePath, CF_CONNECTION_KEY connectionKey, CF_TRANSFER_KEY transferKey);
+    void processFetchPlaceholders(const QString &relativePath,
+                                  quint64 requestKey,
+                                  CF_CONNECTION_KEY connectionKey,
+                                  CF_TRANSFER_KEY transferKey);
     void processFetchData(const QString &relativePath,
                           quint64 offset,
                           quint64 length,
                           const QByteArray &fileIdentity,
+                          quint64 requestKey,
                           CF_CONNECTION_KEY connectionKey,
                           CF_TRANSFER_KEY transferKey);
-    void processValidateData(const QString &relativePath,
-                             const QByteArray &fileIdentity,
-                             quint64 offset,
-                             quint64 length,
-                             CF_CONNECTION_KEY connectionKey,
-                             CF_TRANSFER_KEY transferKey);
     void transferPlaceholders(CF_CONNECTION_KEY connectionKey,
                               CF_TRANSFER_KEY transferKey,
                               const QVector<PlaceholderCreateRequest> &items,
@@ -132,12 +129,8 @@ private:
                       CF_TRANSFER_KEY transferKey,
                       NTSTATUS status,
                       quint64 offset,
+                      quint64 length,
                       const QByteArray &data);
-    void ackData(CF_CONNECTION_KEY connectionKey,
-                 CF_TRANSFER_KEY transferKey,
-                 NTSTATUS status,
-                 quint64 offset,
-                 quint64 length);
 
     QVector<PlaceholderCreateRequest> mountRootPlaceholders() const;
     bool resolveHydrationTarget(const QString &relativePath,
