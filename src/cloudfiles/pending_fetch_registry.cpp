@@ -22,13 +22,7 @@ QString PendingFetchRegistry::keyFor(PendingFetchKind kind, quint64 requestKey)
         + QString::number(requestKey);
 }
 
-QUuid PendingFetchRegistry::begin(PendingFetchKind kind, const QString &relativePath, quint64 requestKey
-#ifdef Q_OS_WIN
-                                  ,
-                                  CF_CONNECTION_KEY connectionKey,
-                                  CF_TRANSFER_KEY transferKey
-#endif
-)
+QUuid PendingFetchRegistry::begin(PendingFetchKind kind, const QString &relativePath, quint64 requestKey)
 {
     QMutexLocker lock(&m_mutex);
     PendingFetch fetch;
@@ -37,10 +31,6 @@ QUuid PendingFetchRegistry::begin(PendingFetchKind kind, const QString &relative
     fetch.relativePath = relativePath;
     fetch.requestKey = requestKey;
     fetch.cancelled = false;
-#ifdef Q_OS_WIN
-    fetch.connectionKey = connectionKey;
-    fetch.transferKey = transferKey;
-#endif
     m_pending.insert(keyFor(kind, requestKey), fetch);
     return fetch.operationId;
 }

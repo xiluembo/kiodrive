@@ -463,7 +463,7 @@ void CALLBACK CloudFilesCallbacks::onFetchPlaceholders(CONST CF_CALLBACK_INFO *i
     const CF_CONNECTION_KEY connectionKey = info->ConnectionKey;
     const CF_TRANSFER_KEY transferKey = info->TransferKey;
     const quint64 requestKey = requestKeyFor(transferKey);
-    self->m_pendingFetches.begin(PendingFetchKind::Placeholders, relative, requestKey, connectionKey, transferKey);
+    self->m_pendingFetches.begin(PendingFetchKind::Placeholders, relative, requestKey);
 
     QMetaObject::invokeMethod(
         self,
@@ -490,7 +490,7 @@ void CALLBACK CloudFilesCallbacks::onFetchData(CONST CF_CALLBACK_INFO *info, CON
     if (info->FileIdentity && info->FileIdentityLength > 0) {
         identity = QByteArray(static_cast<const char *>(info->FileIdentity), static_cast<int>(info->FileIdentityLength));
     }
-    self->m_pendingFetches.begin(PendingFetchKind::Data, relative, requestKey, connectionKey, transferKey);
+    self->m_pendingFetches.begin(PendingFetchKind::Data, relative, requestKey);
 
     QMetaObject::invokeMethod(
         self,

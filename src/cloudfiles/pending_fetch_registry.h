@@ -18,12 +18,6 @@
 #include <QString>
 #include <QUuid>
 
-#ifdef Q_OS_WIN
-#include <windows.h>
-#include <winternl.h>
-#include <cfapi.h>
-#endif
-
 namespace KIODrive
 {
 
@@ -38,10 +32,6 @@ struct PendingFetch {
     QString relativePath;
     quint64 requestKey = 0;
     bool cancelled = false;
-#ifdef Q_OS_WIN
-    CF_CONNECTION_KEY connectionKey{};
-    CF_TRANSFER_KEY transferKey{};
-#endif
 };
 
 /**
@@ -51,13 +41,7 @@ struct PendingFetch {
 class PendingFetchRegistry
 {
 public:
-    QUuid begin(PendingFetchKind kind, const QString &relativePath, quint64 requestKey
-#ifdef Q_OS_WIN
-                ,
-                CF_CONNECTION_KEY connectionKey,
-                CF_TRANSFER_KEY transferKey
-#endif
-    );
+    QUuid begin(PendingFetchKind kind, const QString &relativePath, quint64 requestKey);
 
     bool markCancelled(PendingFetchKind kind, quint64 requestKey);
     bool isCancelled(PendingFetchKind kind, quint64 requestKey) const;
