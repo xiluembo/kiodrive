@@ -119,6 +119,7 @@ private:
                           quint64 length,
                           const QByteArray &fileIdentity,
                           quint64 requestKey,
+                          const QUuid &operationId,
                           CF_CONNECTION_KEY connectionKey,
                           CF_TRANSFER_KEY transferKey);
     void transferPlaceholders(CF_CONNECTION_KEY connectionKey,

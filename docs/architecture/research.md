@@ -35,8 +35,11 @@ headers where noted.
 - **Volume roots** (e.g. `D:\`) cannot be sync roots.
 - **Ancestor/descendant overlap** of sync-root trees is rejected by the platform.
 - Callback surface includes `FETCH_PLACEHOLDERS`, `FETCH_DATA`,
-  `CANCEL_FETCH_*`, `VALIDATE_DATA`, and `NOTIFY_*` for dehydrate/delete/rename
+  `CANCEL_FETCH_*`, and `NOTIFY_*` for dehydrate/delete/rename
   (open/close notifications are optional and non-blocking for open/close).
+  `VALIDATE_DATA` is part of the platform surface but is **not registered**
+  under the current `CF_HYDRATION_POLICY_FULL` (no validation-required
+  modifier); see [cfapi-callback-audit.md](cfapi-callback-audit.md).
 - There is **no** `CF_CALLBACK_TYPE_ACKNOWLEDGE`. Acknowledgements are
   `CfExecute` operations (`ACK_DATA`, `ACK_DEHYDRATE`, `ACK_DELETE`, `ACK_RENAME`).
 - Callback work has a practical **~60 second** timeout (not configurable).

@@ -12,6 +12,8 @@
 
 #include "pending_fetch_registry.h"
 
+#include "common/logging.h"
+
 namespace KIODrive
 {
 
@@ -25,17 +27,21 @@ QString PendingFetchRegistry::keyFor(PendingFetchKind kind, quint64 requestKey)
 QUuid PendingFetchRegistry::begin(PendingFetchKind kind, const QString &relativePath, quint64 requestKey)
 {
     QMutexLocker lock(&m_mutex);
+    const QString key = keyFor(kind, requestKey);
+    if (m_pending.contains(key)) {
+        qCWarning(KIODRIVE_CFAPI_LOG) << "Overwriting pending fetch entry" << key << "path" << relativePath;
+    }
     PendingFetch fetch;
     fetch.operationId = QUuid::createUuid();
     fetch.kind = kind;
     fetch.relativePath = relativePath;
     fetch.requestKey = requestKey;
     fetch.cancelled = false;
-    m_pending.insert(keyFor(kind, requestKey), fetch);
+    m_pending.insert(key, fetch);
     return fetch.operationId;
 }
 
-bool PendingFetchRegistry::markCancelled(PendingFetchKind kind, quint64 requestKey)
+bool PendingFetchRegistry::markCancelled(PendingFetchKind kind, quint64 requestKey, QUuid *operationId)
 {
     QMutexLocker lock(&m_mutex);
     const auto it = m_pending.find(keyFor(kind, requestKey));
@@ -43,6 +49,9 @@ bool PendingFetchRegistry::markCancelled(PendingFetchKind kind, quint64 requestK
         return false;
     }
     it->cancelled = true;
+    if (operationId) {
+        *operationId = it->operationId;
+    }
     return true;
 }
 

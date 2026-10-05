@@ -54,12 +54,20 @@ public:
     using CompletionCallback = std::function<void(bool ok, const QByteArray &data, const QString &error)>;
 
     void hydrate(const HydrationRequest &request, ProgressCallback onProgress, CompletionCallback onComplete);
+
+    /**
+     * Abort only the hydration identified by @p operationId.
+     * Never performs a global cancel of unrelated transfers.
+     * Null operationId is ignored.
+     */
     void cancel(const QUuid &operationId);
 
 private:
     MetadataStore *m_store = nullptr;
     MountRegistry *m_mounts = nullptr;
     KioBackend *m_backend = nullptr;
+    QUuid m_activeOperationId;
+    bool m_cancelRequested = false;
 };
 
 } // namespace KIODrive

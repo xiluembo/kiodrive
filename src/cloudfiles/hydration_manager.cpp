@@ -63,7 +63,10 @@ void HydrationManager::hydrate(const HydrationRequest &request,
     m_backend->setMountId(mount->id);
     m_store->updateItemSyncState(item->id, ItemSyncState::Hydrating);
     qCInfo(KIODRIVE_CFAPI_LOG) << "Hydrating" << item->remotePath << "offset" << request.requiredOffset
-                               << "length" << request.requiredLength;
+                               << "length" << request.requiredLength << "operationId" << request.operationId;
+
+    m_activeOperationId = request.operationId;
+    m_cancelRequested = false;
 
     QByteArray data;
     QString error;
@@ -109,9 +112,29 @@ void HydrationManager::hydrate(const HydrationRequest &request,
         }
     }
 
+    if (m_cancelRequested) {
+        ok = false;
+        data.clear();
+        error = QStringLiteral("Hydration cancelled");
+    } else if (ok && request.requiredLength > 0
+               && static_cast<quint64>(data.size()) != request.requiredLength) {
+        // Short-read must not be treated as success (QFile::read often returns ok with fewer bytes).
+        qCWarning(KIODRIVE_CFAPI_LOG) << "Hydration short read for" << item->remotePath
+                                      << "expected" << request.requiredLength << "got" << data.size();
+        ok = false;
+        error = QStringLiteral("Short read: expected %1 bytes, got %2")
+                    .arg(request.requiredLength)
+                    .arg(data.size());
+        data.clear();
+    }
+
     if (ok) {
         m_store->updateItemSyncState(item->id, ItemSyncState::InSync);
     }
+
+    m_activeOperationId = QUuid();
+    m_cancelRequested = false;
+
     if (onComplete) {
         onComplete(ok, data, error);
     }
@@ -119,9 +142,18 @@ void HydrationManager::hydrate(const HydrationRequest &request,
 
 void HydrationManager::cancel(const QUuid &operationId)
 {
-    Q_UNUSED(operationId);
+    if (operationId.isNull()) {
+        return;
+    }
+    if (m_activeOperationId != operationId) {
+        qCDebug(KIODRIVE_CFAPI_LOG) << "Ignoring cancel for inactive hydration" << operationId
+                                    << "active" << m_activeOperationId;
+        return;
+    }
+    m_cancelRequested = true;
     if (m_backend) {
-        m_backend->cancelTransfers();
+        // Kill only the active get — never listDir or unrelated transfers.
+        m_backend->cancelGet();
     }
 }
 

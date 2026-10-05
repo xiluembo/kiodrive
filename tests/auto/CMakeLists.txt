@@ -25,3 +25,20 @@ ecm_add_test(
         kiodrive_cloudfiles
         Qt6::Test
 )
+
+ecm_add_test(
+    test_transfer_data_contract.cpp
+    LINK_LIBRARIES
+        kiodrive_cloudfiles
+        Qt6::Test
+)
+
+ecm_add_test(
+    test_hydration_manager.cpp
+    LINK_LIBRARIES
+        kiodrive_cloudfiles
+        kiodrive_kio
+        kiodrive_metadata
+        kiodrive_mounts
+        Qt6::Test
+)

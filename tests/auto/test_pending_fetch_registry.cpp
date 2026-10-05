@@ -21,10 +21,12 @@ private Q_SLOTS:
 void TestPendingFetchRegistry::tracksConcurrentRangesForTheSamePath()
 {
     PendingFetchRegistry registry;
-    registry.begin(PendingFetchKind::Data, QStringLiteral("mount/file.bin"), 101);
+    const QUuid op101 = registry.begin(PendingFetchKind::Data, QStringLiteral("mount/file.bin"), 101);
     registry.begin(PendingFetchKind::Data, QStringLiteral("mount/file.bin"), 102);
 
-    QVERIFY(registry.markCancelled(PendingFetchKind::Data, 101));
+    QUuid cancelledOp;
+    QVERIFY(registry.markCancelled(PendingFetchKind::Data, 101, &cancelledOp));
+    QCOMPARE(cancelledOp, op101);
     QVERIFY(registry.isCancelled(PendingFetchKind::Data, 101));
     QVERIFY(!registry.isCancelled(PendingFetchKind::Data, 102));
 

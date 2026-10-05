@@ -13,6 +13,7 @@
 #include "cloud_files_callbacks.h"
 #include "hydration_manager.h"
 #include "placeholder_manager.h"
+#include "transfer_data_contract.h"
 
 #include "common/file_identity.h"
 #include "common/logging.h"
@@ -397,6 +398,7 @@ void CloudFilesCallbacks::processFetchData(const QString &relativePath,
                                            quint64 length,
                                            const QByteArray &fileIdentity,
                                            quint64 requestKey,
+                                           const QUuid &operationId,
                                            CF_CONNECTION_KEY connectionKey,
                                            CF_TRANSFER_KEY transferKey)
 {
@@ -423,7 +425,7 @@ void CloudFilesCallbacks::processFetchData(const QString &relativePath,
     }
 
     HydrationRequest request;
-    request.operationId = QUuid::createUuid();
+    request.operationId = operationId;
     request.identity = identity;
     request.requiredOffset = offset;
     request.requiredLength = length;
@@ -437,18 +439,21 @@ void CloudFilesCallbacks::processFetchData(const QString &relativePath,
         [this, connectionKey, transferKey, offset, length, requestKey, absolutePath = request.absolutePath](
             bool ok, const QByteArray &data, const QString &error) {
             Q_EMIT hydrationFinished(absolutePath);
-            if (m_pendingFetches.isCancelled(PendingFetchKind::Data, requestKey)) {
-                m_pendingFetches.clear(PendingFetchKind::Data, requestKey);
+            const bool cancelled = m_pendingFetches.isCancelled(PendingFetchKind::Data, requestKey);
+            m_pendingFetches.clear(PendingFetchKind::Data, requestKey);
+            const TransferDataCompletion completion =
+                planTransferDataCompletion(cancelled, ok, offset, length, data, error);
+            if (completion.status == TransferDataCompletion::Status::Cancelled) {
                 transferData(connectionKey, transferKey, STATUS_CLOUD_FILE_REQUEST_CANCELLED, offset, length, {});
                 return;
             }
-            m_pendingFetches.clear(PendingFetchKind::Data, requestKey);
-            if (!ok || static_cast<quint64>(data.size()) != length) {
-                qCWarning(KIODRIVE_CFAPI_LOG) << "Hydration failed" << error;
+            if (completion.status != TransferDataCompletion::Status::Success) {
+                qCWarning(KIODRIVE_CFAPI_LOG) << "Hydration failed" << completion.diagnostic
+                                              << "expected" << length << "got" << data.size();
                 transferData(connectionKey, transferKey, STATUS_UNSUCCESSFUL, offset, length, {});
                 return;
             }
-            transferData(connectionKey, transferKey, STATUS_SUCCESS, offset, length, data);
+            transferData(connectionKey, transferKey, STATUS_SUCCESS, offset, length, completion.buffer);
         });
 }
 
@@ -490,12 +495,19 @@ void CALLBACK CloudFilesCallbacks::onFetchData(CONST CF_CALLBACK_INFO *info, CON
     if (info->FileIdentity && info->FileIdentityLength > 0) {
         identity = QByteArray(static_cast<const char *>(info->FileIdentity), static_cast<int>(info->FileIdentityLength));
     }
-    self->m_pendingFetches.begin(PendingFetchKind::Data, relative, requestKey);
+    const QUuid operationId = self->m_pendingFetches.begin(PendingFetchKind::Data, relative, requestKey);
 
     QMetaObject::invokeMethod(
         self,
-        [self, relative, offset, length, identity, requestKey, connectionKey, transferKey]() {
-            self->processFetchData(relative, offset, length, identity, requestKey, connectionKey, transferKey);
+        [self, relative, offset, length, identity, requestKey, operationId, connectionKey, transferKey]() {
+            self->processFetchData(relative,
+                                   offset,
+                                   length,
+                                   identity,
+                                   requestKey,
+                                   operationId,
+                                   connectionKey,
+                                   transferKey);
         },
         Qt::QueuedConnection);
 }
@@ -510,7 +522,22 @@ void CALLBACK CloudFilesCallbacks::onCancelFetchData(CONST CF_CALLBACK_INFO *inf
     const QString relative = self->relativePathFromCallback(info);
     const quint64 requestKey = requestKeyFor(info->TransferKey);
     qCInfo(KIODRIVE_CFAPI_LOG) << "CANCEL_FETCH_DATA" << relative;
-    self->m_pendingFetches.markCancelled(PendingFetchKind::Data, requestKey);
+    QUuid operationId;
+    if (!self->m_pendingFetches.markCancelled(PendingFetchKind::Data, requestKey, &operationId)) {
+        return;
+    }
+    // Queue onto the Qt thread so cancel can interrupt getSync's nested event loop
+    // without killing unrelated transfers (cancel is scoped to operationId).
+    if (self->m_hydration && !operationId.isNull()) {
+        QMetaObject::invokeMethod(
+            self,
+            [self, operationId]() {
+                if (self->m_hydration) {
+                    self->m_hydration->cancel(operationId);
+                }
+            },
+            Qt::QueuedConnection);
+    }
 }
 
 void CALLBACK CloudFilesCallbacks::onCancelFetchPlaceholders(CONST CF_CALLBACK_INFO *info,

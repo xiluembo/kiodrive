@@ -43,7 +43,8 @@ class PendingFetchRegistry
 public:
     QUuid begin(PendingFetchKind kind, const QString &relativePath, quint64 requestKey);
 
-    bool markCancelled(PendingFetchKind kind, quint64 requestKey);
+    /** Marks cancelled; optionally returns the correlated operationId. */
+    bool markCancelled(PendingFetchKind kind, quint64 requestKey, QUuid *operationId = nullptr);
     bool isCancelled(PendingFetchKind kind, quint64 requestKey) const;
     bool takeIfActive(PendingFetchKind kind, quint64 requestKey, PendingFetch *out);
     void clear(PendingFetchKind kind, quint64 requestKey);

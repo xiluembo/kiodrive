@@ -93,19 +93,29 @@ bool KioBackend::hasOpenFile() const
     return m_fileJob != nullptr;
 }
 
-void KioBackend::cancelTransfers()
+void KioBackend::cancelGet()
 {
-    if (m_activeListJob) {
-        qCInfo(KIODRIVE_KIO_LOG) << "Cancelling active listDir job";
-        m_activeListJob->kill(KJob::EmitResult);
-        m_activeListJob.clear();
-    }
     if (m_activeGetJob) {
         qCInfo(KIODRIVE_KIO_LOG) << "Cancelling active get job";
         m_activeGetJob->kill(KJob::EmitResult);
         m_activeGetJob.clear();
     }
     m_getBuffer.clear();
+}
+
+void KioBackend::cancelList()
+{
+    if (m_activeListJob) {
+        qCInfo(KIODRIVE_KIO_LOG) << "Cancelling active listDir job";
+        m_activeListJob->kill(KJob::EmitResult);
+        m_activeListJob.clear();
+    }
+}
+
+void KioBackend::cancelTransfers()
+{
+    cancelList();
+    cancelGet();
 }
 
 void KioBackend::applyCredentials(QUrl *url) const

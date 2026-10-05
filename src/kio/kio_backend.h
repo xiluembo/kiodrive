@@ -116,7 +116,11 @@ public:
 
     bool hasOpenFile() const;
 
-    /** Kill in-flight listDir/get transfer jobs (CFAPI CANCEL_FETCH_*). */
+    /** Kill the in-flight get transfer only (targeted CANCEL_FETCH_DATA). */
+    void cancelGet();
+    /** Kill the in-flight listDir job only (targeted CANCEL_FETCH_PLACEHOLDERS). */
+    void cancelList();
+    /** Kill in-flight listDir and get jobs. Prefer cancelGet/cancelList for CFAPI. */
     void cancelTransfers();
 
 Q_SIGNALS:
