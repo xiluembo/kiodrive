@@ -18,12 +18,6 @@
 #include <QString>
 #include <QUuid>
 
-#ifdef Q_OS_WIN
-#include <windows.h>
-#include <winternl.h>
-#include <cfapi.h>
-#endif
-
 namespace KIODrive
 {
 
@@ -36,11 +30,8 @@ struct PendingFetch {
     QUuid operationId;
     PendingFetchKind kind = PendingFetchKind::Data;
     QString relativePath;
+    quint64 requestKey = 0;
     bool cancelled = false;
-#ifdef Q_OS_WIN
-    CF_CONNECTION_KEY connectionKey{};
-    CF_TRANSFER_KEY transferKey{};
-#endif
 };
 
 /**
@@ -50,21 +41,16 @@ struct PendingFetch {
 class PendingFetchRegistry
 {
 public:
-    QUuid begin(PendingFetchKind kind, const QString &relativePath
-#ifdef Q_OS_WIN
-                ,
-                CF_CONNECTION_KEY connectionKey,
-                CF_TRANSFER_KEY transferKey
-#endif
-    );
+    QUuid begin(PendingFetchKind kind, const QString &relativePath, quint64 requestKey);
 
-    bool markCancelled(PendingFetchKind kind, const QString &relativePath);
-    bool isCancelled(PendingFetchKind kind, const QString &relativePath) const;
-    bool takeIfActive(PendingFetchKind kind, const QString &relativePath, PendingFetch *out);
-    void clear(PendingFetchKind kind, const QString &relativePath);
+    /** Marks cancelled; optionally returns the correlated operationId. */
+    bool markCancelled(PendingFetchKind kind, quint64 requestKey, QUuid *operationId = nullptr);
+    bool isCancelled(PendingFetchKind kind, quint64 requestKey) const;
+    bool takeIfActive(PendingFetchKind kind, quint64 requestKey, PendingFetch *out);
+    void clear(PendingFetchKind kind, quint64 requestKey);
 
 private:
-    static QString keyFor(PendingFetchKind kind, const QString &relativePath);
+    static QString keyFor(PendingFetchKind kind, quint64 requestKey);
 
     mutable QMutex m_mutex;
     QHash<QString, PendingFetch> m_pending;
